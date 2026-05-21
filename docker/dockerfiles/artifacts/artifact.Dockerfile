@@ -63,8 +63,10 @@ ARG BUILD_ROOT
 LABEL org.opencontainers.image.source="https://github.com/starrocks/starrocks"
 LABEL org.starrocks.version=${RELEASE_VERSION:-"UNKNOWN"}
 
-COPY --from=fe-builder ${BUILD_ROOT}/output /release/fe_artifacts
-COPY --from=be-builder ${BUILD_ROOT}/output /release/be_artifacts
+# Keep component artifacts isolated. Copying the entire output directory here also pulls every
+# BE variant into the FE image and the FE plus alternate BE variants into the BE/CN image.
+COPY --from=fe-builder ${BUILD_ROOT}/output/fe /release/fe_artifacts/fe
+COPY --from=be-builder ${BUILD_ROOT}/output/be /release/be_artifacts/be
 COPY --from=fe-builder ${BUILD_ROOT}/fs_brokers/apache_hdfs_broker/output /release/broker_artifacts
 
 COPY --from=downloader /arthas/arthas-boot.jar /release/fe_artifacts/fe/arthas/arthas-boot.jar

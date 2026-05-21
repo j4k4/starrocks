@@ -31,6 +31,20 @@ constexpr int HLL_EMPTY_SIZE = 1;
 const static int MAX_HLL_LOG_K = 20;
 const static uint8_t DEFAULT_HLL_LOG_K = 17;
 
+// For DataSketches theta (lg_k matches datasketches::theta_constants).
+//
+// 12 is datasketches::theta_constants::DEFAULT_LG_K, kept deliberately so this constant stays the
+// library's value rather than a deployment's preference. It is the fallback, not the effective
+// default: the effective one is the `theta_sketch_default_lg_k` BE config, and default_theta_lg_k()
+// resolves it. A deployment that needs to match another engine's precision sets that config, which
+// keeps the choice in be.conf where it is visible and auditable.
+//
+// This matters more than it looks, because a header-less sketch carries no precision information at
+// all. Compact theta sketches do not store lg_k, which is why DataSketchesTheta prepends
+// [0xFE][lg_k]; sketches written by other tools have no such header, so the resolved default
+// becomes the sole determinant of accuracy for any union over them.
+const static uint8_t DEFAULT_THETA_LOG_K = 12;
+
 // For JSON type
 constexpr int kJsonDefaultSize = 128;
 constexpr int kJsonMetaDefaultFormatVersion = 1;

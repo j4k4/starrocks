@@ -1755,6 +1755,23 @@ CONF_mInt32(agg_hash_map_prefetch_dist, "16");
 // contended many-driver-per-core deployments where the effective L2 share per
 // table is smaller than the nominal per-core size.
 CONF_mDouble(agg_prefetch_l2_ratio, "1.0");
+// Default lg_k for DataSketches theta sketches, i.e. log2 of the maximum number of entries a
+// sketch retains. 12 (k = 4096) is the datasketches library default; the accepted range is
+// [5, 26] and an out-of-range value falls back to 12 with a warning.
+//
+// This is the precision used whenever nothing else specifies one: by ds_theta_count_distinct and
+// ds_theta_accumulate when called without their optional log_k argument, and by every union over
+// sketches that carry no [0xFE][lg_k] header, which is what sketches written outside StarRocks
+// look like. Raise it to match another engine's precision -- Druid's thetaSketch aggregator
+// defaults to size 16384, which is lg_k 14 -- at a memory cost on the aggregation path, since a
+// union retains up to k entries of 8 bytes each: 128 KB per group at 14 against 32 KB at 12.
+//
+// Deliberately not mutable. It is read once per process, because changing it while queries run
+// would put sketches of differing precision into one aggregation, and set every node in the
+// cluster to the same value: a node configured lower contributes coarser sketches, and while the
+// merge path resolves that deterministically by promoting to the larger lg_k, the result is still
+// bounded by the coarsest input.
+CONF_Int32(theta_sketch_default_lg_k, "12");
 // sink buffer memory limit per driver
 CONF_mInt64(sink_buffer_mem_limit_per_driver, "134217728");
 
